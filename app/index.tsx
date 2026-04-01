@@ -20,7 +20,7 @@ export default function App() {
           className={`btn-3d ${signInPressed ? "btn-3d-pressed" : ""}`}
           onPressIn={() => setSignInPressed(true)}
           onPressOut={() => setSignInPressed(false)}
-          onPress={() => router.push("/(auth)/sign-in")}
+          onPress={() => router.replace("/(tabs)" as any)}
         >
           <Text className="btn-3d-text">Sign In</Text>
         </Pressable>

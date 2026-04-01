@@ -5,21 +5,27 @@
 @import "nativewind/theme";
 
 @theme {
-  /* Dark theme with mint accents */
-  --color-background: #0F1923;
-  --color-foreground: #F0F6F3;
-  --color-card: #172A36;
-  --color-muted: #1E3443;
-  --color-muted-foreground: rgba(240, 246, 243, 0.55);
-  --color-primary: #F0F6F3;
-  --color-accent: #4EEAAA;
-  --color-accent-dark: #38B882;
-  --color-accent-foreground: #0F1923;
-  --color-border: rgba(240, 246, 243, 0.12);
-  --color-success: #4EEAAA;
-  --color-destructive: #FF6B6B;
-  --color-subscription: #1A3D4E;
-  --color-warning: #FFD93D;
+  /* Dark theme — Showle */
+  --color-background: #101012;
+  --color-foreground: #f0f0f5;
+  --color-card: #151517;
+  --color-card-hover: #1a1a1d;
+  --color-card-border: #252528;
+  --color-muted: #1a1a1d;
+  --color-muted-foreground: #8a8a9a;
+  --color-primary: #f0f0f5;
+  --color-accent: #7c4dff;
+  --color-accent-dark: #5a35cc;
+  --color-accent-foreground: #ffffff;
+  --color-accent-green: #00e676;
+  --color-accent-cyan: #00bcd4;
+  --color-border: #252528;
+  --color-success: #00e676;
+  --color-destructive: #ff5252;
+  --color-match-exact: #00e676;
+  --color-match-partial: #ffc107;
+  --color-match-miss: #ff5252;
+  --color-warning: #ffc107;
 
   --spacing-0: 0px;
   --spacing-1: 4px;
@@ -158,7 +164,7 @@
   }
 
   .sub-card-expanded {
-    @apply bg-subscription;
+    @apply bg-card-hover;
   }
 
   .sub-head {
@@ -432,7 +438,7 @@
   /* ── 3D Buttons (Duolingo-style) ── */
 
   .btn-3d {
-    @apply items-center justify-center rounded-2xl bg-accent px-6 py-4 border-[2px] border-accent-dark border-b-[5px];
+    @apply items-center justify-center rounded-2xl bg-accent px-6 py-4 border-2 border-accent-dark border-b-[5px];
   }
 
   .btn-3d-text {
@@ -440,11 +446,11 @@
   }
 
   .btn-3d-pressed {
-    @apply border-b-[2px] mt-[3px];
+    @apply border-b-2 mt-0.75;
   }
 
   .btn-3d-secondary {
-    @apply items-center justify-center rounded-2xl bg-muted px-6 py-4 border-[2px] border-[#152530] border-b-[5px];
+    @apply items-center justify-center rounded-2xl bg-muted px-6 py-4 border-2 border-card-border border-b-[5px];
   }
 
   .btn-3d-secondary-text {
@@ -452,7 +458,7 @@
   }
 
   .btn-3d-destructive {
-    @apply items-center justify-center rounded-2xl bg-destructive px-6 py-4 border-[2px] border-[#CC4444] border-b-[5px];
+    @apply items-center justify-center rounded-2xl bg-destructive px-6 py-4 border-2 border-[#CC4444] border-b-[5px];
   }
 
   .btn-3d-destructive-text {
@@ -460,7 +466,7 @@
   }
 
   .btn-3d-sm {
-    @apply rounded-xl px-4 py-3 border-b-[4px];
+    @apply rounded-xl px-4 py-3 border-b-4;
   }
 
   .btn-3d-disabled {

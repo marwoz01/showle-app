@@ -3,6 +3,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
 import { useEffect } from "react";
+import { I18nProvider } from "@/i18n";
 import {
   Inter_300Light,
   Inter_400Regular,
@@ -45,10 +46,12 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-      }}
-    />
+    <I18nProvider>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      />
+    </I18nProvider>
   );
 }
