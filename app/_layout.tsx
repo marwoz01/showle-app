@@ -1,9 +1,13 @@
 import "@/global.css";
-import { Stack } from "expo-router";
+import { useEffect } from "react";
+import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
-import { useEffect } from "react";
+import { ClerkProvider, ClerkLoaded, useAuth } from "@clerk/clerk-expo";
+import { tokenCache } from "@/lib/clerk-token-cache";
 import { I18nProvider } from "@/i18n";
+import { setTokenGetter } from "@/lib/api";
+import Constants from "expo-constants";
 import {
   Inter_300Light,
   Inter_400Regular,
@@ -20,6 +24,42 @@ import {
 } from "@expo-google-fonts/space-grotesk";
 
 SplashScreen.preventAutoHideAsync();
+
+const clerkPublishableKey =
+  Constants.expoConfig?.extra?.clerkPublishableKey ||
+  process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+function AuthGuard() {
+  const { isSignedIn, isLoaded, getToken } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      setTokenGetter(() => getToken());
+    }
+  }, [isLoaded, isSignedIn]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const inAuthGroup = segments[0] === "(auth)";
+
+    if (!isSignedIn && !inAuthGroup) {
+      router.replace("/(auth)/sign-in");
+    } else if (isSignedIn && inAuthGroup) {
+      router.replace("/(tabs)");
+    }
+  }, [isSignedIn, isLoaded, segments]);
+
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+      }}
+    />
+  );
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -46,12 +86,12 @@ export default function RootLayout() {
   }
 
   return (
-    <I18nProvider>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-        }}
-      />
-    </I18nProvider>
+    <ClerkProvider publishableKey={clerkPublishableKey!} tokenCache={tokenCache}>
+      <ClerkLoaded>
+        <I18nProvider>
+          <AuthGuard />
+        </I18nProvider>
+      </ClerkLoaded>
+    </ClerkProvider>
   );
 }

@@ -28,6 +28,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     "expo-router",
+    "expo-secure-store",
     [
       "expo-splash-screen",
       {
@@ -47,5 +48,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   extra: {
     tmdbApiKey: process.env.TMDB_API_KEY,
+    clerkPublishableKey: process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
   },
 });

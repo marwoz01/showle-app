@@ -1,7 +1,9 @@
 import { Tabs } from "expo-router";
 import TabBar from "@/components/tab-bar";
+import { useSyncOnForeground } from "@/hooks/useSyncOnForeground";
 
 export default function TabsLayout() {
+  useSyncOnForeground();
   return (
     <Tabs
       screenOptions={{ headerShown: false }}

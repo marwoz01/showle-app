@@ -55,6 +55,42 @@ export interface Translations {
     tagline: (tagline: string) => string;
     overview: (text: string) => string;
   };
+  auth: {
+    signIn: string;
+    signUp: string;
+    signInSubtitle: string;
+    signUpSubtitle: string;
+    email: string;
+    emailPlaceholder: string;
+    password: string;
+    passwordPlaceholder: string;
+    noAccount: string;
+    haveAccount: string;
+    signInError: string;
+    signUpError: string;
+    verificationTitle: string;
+    verificationSubtitle: string;
+    verificationCode: string;
+    verify: string;
+    continueWithGoogle: string;
+    orWithEmail: string;
+  };
+  profile: {
+    title: string;
+    signOut: string;
+    gamesPlayed: string;
+    gamesWon: string;
+    winRate: string;
+    currentStreak: string;
+    maxStreak: string;
+    averageGuesses: string;
+    gameHistory: string;
+    noGamesYet: string;
+    won: string;
+    lost: string;
+    attempts: string;
+    loadError: string;
+  };
   result: {
     youGuessed: string;
     attempts: string;
