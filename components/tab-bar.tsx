@@ -69,7 +69,7 @@ export default function TabBar({ state, navigation }: BottomTabBarProps) {
 
       <View
         className="overflow-hidden rounded-full border border-white/5"
-        style={{ backgroundColor: "rgba(21,21,23,0.85)" }}
+        style={{ backgroundColor: "#151517" }}
       >
         <View className="flex-row items-center justify-around px-2 py-3">
           {state.routes.map((route, index) => {

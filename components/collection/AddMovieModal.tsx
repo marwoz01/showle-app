@@ -6,8 +6,11 @@ import {
   Modal,
   FlatList,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useState, useCallback, useRef } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "@/i18n";
@@ -17,10 +20,7 @@ import { CollectionCategory } from "@/lib/api-types";
 
 interface AddMovieModalProps {
   visible: boolean;
-  onAdd: (
-    movies: MediaDetails[],
-    category: CollectionCategory,
-  ) => void;
+  onAdd: (movies: MediaDetails[], category: CollectionCategory) => void;
   onClose: () => void;
 }
 
@@ -29,6 +29,7 @@ export default function AddMovieModal({
   onAdd,
   onClose,
 }: AddMovieModalProps) {
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<MediaDetails[]>([]);
@@ -84,187 +85,220 @@ export default function AddMovieModal({
     <Modal
       visible={visible}
       animationType="slide"
-      transparent
+      presentationStyle="fullScreen"
       onRequestClose={handleClose}
     >
-      <View className="flex-1 justify-end bg-black/60">
-        <View
-          className="rounded-t-3xl border-t border-border bg-card px-5 pb-8 pt-5"
-          style={{ maxHeight: "85%" }}
-        >
-          <View className="mb-1 h-1 w-10 self-center rounded-full bg-border" />
-
-          <Text className="mt-3 text-lg font-heading-bold text-primary">
+      <View
+        className="flex-1 bg-background"
+        style={{ paddingTop: insets.top }}
+      >
+        {/* Header */}
+        <View className="flex-row items-center gap-3 px-4 pb-3 pt-2">
+          <Pressable onPress={handleClose} hitSlop={12}>
+            <Ionicons name="close" size={24} color="#e8e8ed" />
+          </Pressable>
+          <Text className="flex-1 text-lg font-heading-bold text-primary">
             {t.collections.addMovie}
           </Text>
-
-          {/* Category selector */}
-          <View className="mt-3 flex-row gap-2">
-            {(["watched", "watchlist"] as const).map((cat) => (
-              <Pressable
-                key={cat}
-                onPress={() => setCategory(cat)}
-                className="flex-row items-center gap-1.5 rounded-lg px-3 py-2"
-                style={{
-                  backgroundColor:
-                    category === cat
-                      ? "rgba(124,77,255,0.15)"
-                      : "rgba(255,255,255,0.05)",
-                  borderWidth: 1,
-                  borderColor:
-                    category === cat
-                      ? "rgba(124,77,255,0.4)"
-                      : "transparent",
-                }}
-              >
-                <Ionicons
-                  name={cat === "watched" ? "eye" : "bookmark"}
-                  size={14}
-                  color={category === cat ? "#7c4dff" : "#8a8a9a"}
-                />
-                <Text
-                  style={{
-                    color: category === cat ? "#7c4dff" : "#8a8a9a",
-                    fontSize: 13,
-                    fontWeight: "600",
-                  }}
-                >
-                  {cat === "watched"
-                    ? t.collections.watched
-                    : t.collections.watchlist}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-
-          {/* Search input */}
-          <View className="mt-3 flex-row items-center rounded-xl border border-border bg-background px-3">
-            <Ionicons name="search" size={18} color="#8a8a9a" />
-            <TextInput
-              value={query}
-              onChangeText={handleSearch}
-              placeholder={t.collections.searchMovies}
-              placeholderTextColor="#555"
-              className="ml-2 flex-1 py-3 text-sm font-sans text-primary"
-              autoFocus
-            />
-            {loading && <ActivityIndicator size="small" color="#7c4dff" />}
-          </View>
-
-          {/* Results */}
-          <FlatList
-            data={results}
-            keyExtractor={(item) => String(item.id)}
-            className="mt-3"
-            style={{ flexGrow: 0 }}
-            renderItem={({ item }) => {
-              const isSelected = selected.has(item.id);
-              return (
-                <Pressable
-                  onPress={() => toggleSelect(item.id)}
-                  className="flex-row items-center gap-3 rounded-xl px-2 py-2"
-                  style={{
-                    backgroundColor: isSelected
-                      ? "rgba(124,77,255,0.1)"
-                      : "transparent",
-                  }}
-                >
-                  {/* Checkbox */}
-                  <View
-                    className="items-center justify-center rounded-md"
-                    style={{
-                      width: 22,
-                      height: 22,
-                      borderWidth: 1.5,
-                      borderColor: isSelected ? "#7c4dff" : "#555",
-                      backgroundColor: isSelected
-                        ? "#7c4dff"
-                        : "transparent",
-                    }}
-                  >
-                    {isSelected && (
-                      <Ionicons name="checkmark" size={15} color="#fff" />
-                    )}
-                  </View>
-
-                  {/* Poster */}
-                  <View
-                    className="overflow-hidden rounded-lg"
-                    style={{
-                      width: 36,
-                      height: 54,
-                      backgroundColor: "rgba(255,255,255,0.05)",
-                    }}
-                  >
-                    {item.posterPath ? (
-                      <Image
-                        source={{
-                          uri: `https://image.tmdb.org/t/p/w92${item.posterPath}`,
-                        }}
-                        style={{ width: "100%", height: "100%" }}
-                        contentFit="cover"
-                      />
-                    ) : (
-                      <View className="flex-1 items-center justify-center">
-                        <Ionicons
-                          name="film-outline"
-                          size={16}
-                          color="#8a8a9a"
-                        />
-                      </View>
-                    )}
-                  </View>
-
-                  {/* Info */}
-                  <View className="flex-1">
-                    <Text
-                      className="text-sm font-heading-semibold text-primary"
-                      numberOfLines={1}
-                    >
-                      {item.title}
-                    </Text>
-                    <Text className="text-xs font-sans text-muted-foreground">
-                      {item.year} · {item.director}
-                    </Text>
-                  </View>
-                </Pressable>
-              );
-            }}
-            ListEmptyComponent={
-              query.length >= 2 && !loading ? (
-                <Text className="py-8 text-center text-sm font-sans text-muted-foreground">
-                  No results
-                </Text>
-              ) : null
-            }
-          />
-
-          {/* Actions */}
-          <View className="mt-4 flex-row gap-3">
-            <Pressable
-              onPress={handleClose}
-              className="flex-1 items-center rounded-xl border border-border py-3"
-            >
-              <Text className="text-sm font-heading-semibold text-muted-foreground">
-                {t.collections.cancel}
-              </Text>
-            </Pressable>
+          {selected.size > 0 && (
             <Pressable
               onPress={handleAdd}
-              className="flex-1 items-center rounded-xl py-3"
-              style={{
-                backgroundColor:
-                  selected.size > 0 ? "#7c4dff" : "rgba(124,77,255,0.3)",
-              }}
-              disabled={selected.size === 0}
+              className="rounded-lg px-4 py-2"
+              style={{ backgroundColor: "#7c4dff" }}
             >
               <Text className="text-sm font-heading-semibold text-white">
-                {t.collections.addSelected}
-                {selected.size > 0 ? ` (${selected.size})` : ""}
+                {t.collections.addSelected} ({selected.size})
               </Text>
             </Pressable>
-          </View>
+          )}
         </View>
+
+        {/* Category selector */}
+        <View className="flex-row gap-2 px-4 pb-3">
+          {(["watched", "watchlist"] as const).map((cat) => (
+            <Pressable
+              key={cat}
+              onPress={() => setCategory(cat)}
+              className="flex-row items-center gap-1.5 rounded-lg px-3 py-2"
+              style={{
+                backgroundColor:
+                  category === cat
+                    ? "rgba(124,77,255,0.15)"
+                    : "rgba(255,255,255,0.05)",
+                borderWidth: 1,
+                borderColor:
+                  category === cat ? "rgba(124,77,255,0.4)" : "transparent",
+              }}
+            >
+              <Ionicons
+                name={cat === "watched" ? "eye" : "bookmark"}
+                size={14}
+                color={category === cat ? "#7c4dff" : "#8a8a9a"}
+              />
+              <Text
+                style={{
+                  color: category === cat ? "#7c4dff" : "#8a8a9a",
+                  fontSize: 13,
+                  fontWeight: "600",
+                }}
+              >
+                {cat === "watched"
+                  ? t.collections.watched
+                  : t.collections.watchlist}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Search input */}
+        <View className="mx-4 mb-3 flex-row items-center rounded-xl border border-border bg-card px-3">
+          <Ionicons name="search" size={18} color="#8a8a9a" />
+          <TextInput
+            value={query}
+            onChangeText={handleSearch}
+            placeholder={t.collections.searchMovies}
+            placeholderTextColor="#555"
+            className="ml-2 flex-1 py-3 text-sm font-sans text-primary"
+            autoFocus
+          />
+          {query.length > 0 && (
+            <Pressable
+              onPress={() => {
+                setQuery("");
+                setResults([]);
+              }}
+              hitSlop={8}
+            >
+              <Ionicons name="close-circle" size={18} color="#555" />
+            </Pressable>
+          )}
+          {loading && (
+            <ActivityIndicator
+              size="small"
+              color="#7c4dff"
+              style={{ marginLeft: 8 }}
+            />
+          )}
+        </View>
+
+        {/* Results */}
+        <FlatList
+          data={results}
+          keyExtractor={(item) => String(item.id)}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
+          renderItem={({ item }) => {
+            const isSelected = selected.has(item.id);
+            return (
+              <Pressable
+                onPress={() => toggleSelect(item.id)}
+                className="mb-2 flex-row items-center gap-3 rounded-2xl border p-3"
+                style={{
+                  backgroundColor: isSelected
+                    ? "rgba(124,77,255,0.08)"
+                    : "rgba(255,255,255,0.02)",
+                  borderColor: isSelected
+                    ? "rgba(124,77,255,0.3)"
+                    : "rgba(255,255,255,0.06)",
+                }}
+              >
+                {/* Checkbox */}
+                <View
+                  className="items-center justify-center rounded-full"
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderWidth: 2,
+                    borderColor: isSelected ? "#7c4dff" : "#555",
+                    backgroundColor: isSelected ? "#7c4dff" : "transparent",
+                  }}
+                >
+                  {isSelected && (
+                    <Ionicons name="checkmark" size={15} color="#fff" />
+                  )}
+                </View>
+
+                {/* Poster */}
+                <View
+                  className="overflow-hidden rounded-lg"
+                  style={{
+                    width: 48,
+                    height: 72,
+                    backgroundColor: "rgba(255,255,255,0.05)",
+                  }}
+                >
+                  {item.posterPath ? (
+                    <Image
+                      source={{
+                        uri: `https://image.tmdb.org/t/p/w185${item.posterPath}`,
+                      }}
+                      style={{ width: "100%", height: "100%" }}
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <View className="flex-1 items-center justify-center">
+                      <Ionicons name="film-outline" size={20} color="#8a8a9a" />
+                    </View>
+                  )}
+                </View>
+
+                {/* Info */}
+                <View className="flex-1">
+                  <Text
+                    className="text-base font-heading-semibold text-primary"
+                    numberOfLines={1}
+                  >
+                    {item.title}
+                  </Text>
+                  <Text className="mt-0.5 text-xs font-sans-medium text-muted-foreground">
+                    {item.year} · {item.director}
+                  </Text>
+                  <Text
+                    className="mt-0.5 text-xs font-sans text-muted-foreground"
+                    numberOfLines={1}
+                  >
+                    {item.genres.slice(0, 3).join(", ")}
+                  </Text>
+                </View>
+
+                {/* Rating */}
+                {item.rating > 0 && (
+                  <View
+                    className="flex-row items-center gap-0.5 rounded-md px-1.5 py-0.5"
+                    style={{ backgroundColor: "rgba(255,193,7,0.15)" }}
+                  >
+                    <Ionicons name="star" size={11} color="#ffc107" />
+                    <Text
+                      style={{
+                        color: "#ffc107",
+                        fontSize: 11,
+                        fontWeight: "700",
+                      }}
+                    >
+                      {item.rating}
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
+            );
+          }}
+          ListEmptyComponent={
+            query.length < 2 ? (
+              <View className="items-center pt-20">
+                <Ionicons name="search" size={48} color="rgba(255,255,255,0.08)" />
+                <Text className="mt-4 text-center text-sm font-sans text-muted-foreground">
+                  {t.collections.searchMovies}
+                </Text>
+              </View>
+            ) : !loading ? (
+              <Text className="py-12 text-center text-sm font-sans text-muted-foreground">
+                No results
+              </Text>
+            ) : null
+          }
+        />
       </View>
     </Modal>
   );

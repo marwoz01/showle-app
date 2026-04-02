@@ -10,7 +10,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useTranslation } from "@/i18n";
 import { api } from "@/lib/api";
 import {
@@ -19,9 +19,7 @@ import {
   CollectionSort,
   RankedList,
 } from "@/lib/api-types";
-import { MediaDetails } from "@/types";
 import CollectionCard from "@/components/collection/CollectionCard";
-import AddMovieModal from "@/components/collection/AddMovieModal";
 import ReviewModal from "@/components/collection/ReviewModal";
 
 type Tab = "watched" | "watchlist" | "rankings";
@@ -50,7 +48,6 @@ export default function Collections() {
   const [hasMore, setHasMore] = useState(true);
 
   // Modals
-  const [addModalVisible, setAddModalVisible] = useState(false);
   const [reviewModal, setReviewModal] = useState<{
     visible: boolean;
     movie: SavedMovie | null;
@@ -124,9 +121,13 @@ export default function Collections() {
     loadData().finally(() => setLoading(false));
   }, [tab, sort]);
 
-  useEffect(() => {
-    fetchCounts();
-  }, []);
+  // Refresh when screen gains focus (e.g. returning from add-movie)
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+      fetchCounts();
+    }, [loadData, fetchCounts]),
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -202,31 +203,6 @@ export default function Collections() {
     [reviewModal.movie],
   );
 
-  const handleAddMovies = useCallback(
-    async (mediaList: MediaDetails[], category: CollectionCategory) => {
-      for (const m of mediaList) {
-        try {
-          await api.collection.save({
-            tmdbId: m.id,
-            title: m.title,
-            year: m.year,
-            posterPath: m.posterPath,
-            genres: m.genres,
-            director: m.director,
-            overview: m.overview,
-            runtime: m.runtime,
-            tmdbRating: m.rating,
-            category,
-          });
-        } catch {
-          // skip duplicates
-        }
-      }
-      loadData();
-      fetchCounts();
-    },
-    [loadData, fetchCounts],
-  );
 
   // ── Tabs config ──
 
@@ -371,6 +347,22 @@ export default function Collections() {
         })}
       </View>
 
+      {/* Add button */}
+      <Pressable
+        onPress={() =>
+          tab === "rankings"
+            ? router.push("/ranking/new")
+            : router.push("/add-movie")
+        }
+        className="mx-4 mb-3 flex-row items-center justify-center gap-1.5 rounded-xl border border-dashed py-2.5"
+        style={{ borderColor: "rgba(124,77,255,0.3)" }}
+      >
+        <Ionicons name="add-circle-outline" size={18} color="#7c4dff" />
+        <Text style={{ color: "#7c4dff", fontSize: 13, fontWeight: "600" }}>
+          {tab === "rankings" ? t.collections.newList : t.collections.addMovie}
+        </Text>
+      </Pressable>
+
       {/* Sort (only for watched/watchlist) */}
       {tab !== "rankings" && (
         <View className="mb-3 flex-row items-center gap-1.5 px-4">
@@ -419,33 +411,10 @@ export default function Collections() {
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 pb-3 pt-2">
+      <View className="px-4 pb-3 pt-2">
         <Text className="text-2xl font-heading-bold text-primary">
           {t.collections.title}
         </Text>
-        {tab === "rankings" ? (
-          <Pressable
-            onPress={() => router.push("/ranking/new")}
-            className="flex-row items-center gap-1 rounded-lg px-3 py-1.5"
-            style={{ backgroundColor: "rgba(124,77,255,0.15)" }}
-          >
-            <Ionicons name="add" size={16} color="#7c4dff" />
-            <Text style={{ color: "#7c4dff", fontSize: 13, fontWeight: "600" }}>
-              {t.collections.newList}
-            </Text>
-          </Pressable>
-        ) : (
-          <Pressable
-            onPress={() => setAddModalVisible(true)}
-            className="flex-row items-center gap-1 rounded-lg px-3 py-1.5"
-            style={{ backgroundColor: "rgba(124,77,255,0.15)" }}
-          >
-            <Ionicons name="add" size={16} color="#7c4dff" />
-            <Text style={{ color: "#7c4dff", fontSize: 13, fontWeight: "600" }}>
-              {t.collections.addMovie}
-            </Text>
-          </Pressable>
-        )}
       </View>
 
       {loading ? (
@@ -458,6 +427,7 @@ export default function Collections() {
           keyExtractor={(item) => item.id}
           renderItem={renderRankingItem}
           ListHeaderComponent={ListHeader}
+          contentContainerStyle={{ paddingBottom: 100 }}
           ListEmptyComponent={
             <Text className="px-4 py-12 text-center text-sm font-sans text-muted-foreground">
               {emptyMessage}
@@ -477,6 +447,7 @@ export default function Collections() {
           keyExtractor={(item) => item.id}
           renderItem={renderMovieItem}
           ListHeaderComponent={ListHeader}
+          contentContainerStyle={{ paddingBottom: 100 }}
           ListEmptyComponent={
             <Text className="px-4 py-12 text-center text-sm font-sans text-muted-foreground">
               {emptyMessage}
@@ -504,11 +475,6 @@ export default function Collections() {
       )}
 
       {/* Modals */}
-      <AddMovieModal
-        visible={addModalVisible}
-        onAdd={handleAddMovies}
-        onClose={() => setAddModalVisible(false)}
-      />
       <ReviewModal
         visible={reviewModal.visible}
         initialReview={reviewModal.movie?.review ?? ""}
