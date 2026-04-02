@@ -43,3 +43,72 @@ export interface UserStatsResponse {
   maxStreak: number;
   averageGuesses: number;
 }
+
+// ── Collection ──
+
+export interface SavedMovie {
+  id: string;
+  tmdbId: number;
+  title: string;
+  year: number;
+  posterPath: string;
+  genres: string[];
+  director: string;
+  overview: string;
+  runtime: number;
+  tmdbRating: number;
+  category: "watched" | "watchlist";
+  rating: number | null;
+  review: string | null;
+  watchedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SaveMovieBody {
+  tmdbId: number;
+  title: string;
+  year: number;
+  posterPath: string;
+  genres: string[];
+  director: string;
+  overview: string;
+  runtime: number;
+  tmdbRating: number;
+  category: "watched" | "watchlist";
+  rating?: number;
+  review?: string;
+}
+
+export interface CollectionResponse {
+  items: SavedMovie[];
+  total: number;
+}
+
+export type CollectionSort = "date" | "rating" | "title" | "year";
+export type CollectionCategory = "watched" | "watchlist";
+
+// ── Rankings ──
+
+export interface RankedListItem {
+  id: string;
+  listId: string;
+  tmdbId: number;
+  title: string;
+  year: number;
+  posterPath: string;
+  genres: string[];
+  director: string;
+  overview: string;
+  position: number;
+}
+
+export interface RankedList {
+  id: string;
+  name: string;
+  description: string | null;
+  items: RankedListItem[];
+  _count?: { items: number };
+  createdAt: string;
+  updatedAt: string;
+}
