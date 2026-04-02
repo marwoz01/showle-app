@@ -12,6 +12,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import DraggableFlatList, {
+  ScaleDecorator,
+  RenderItemParams,
+} from "react-native-draggable-flatlist";
 import { useTranslation } from "@/i18n";
 import { api } from "@/lib/api";
 import { RankedList, RankedListItem } from "@/lib/api-types";
@@ -47,7 +51,7 @@ export default function RankingDetail() {
     fetchList();
   }, [fetchList]);
 
-  // ── Search for adding movies ──
+  // ── Search ──
 
   const handleSearch = useCallback((text: string) => {
     setSearchQuery(text);
@@ -95,29 +99,18 @@ export default function RankingDetail() {
     [id, fetchList],
   );
 
-  // ── Reorder ──
+  // ── Drag reorder ──
 
-  const handleMoveUp = useCallback(
-    async (itemId: string) => {
+  const handleDragEnd = useCallback(
+    async ({ data }: { data: RankedListItem[] }) => {
       if (!list) return;
-      const items = [...list.items].sort((a, b) => a.position - b.position);
-      const idx = items.findIndex((i) => i.id === itemId);
-      if (idx <= 0) return;
+      const reordered = data.map((item, i) => ({ ...item, position: i + 1 }));
+      setList({ ...list, items: reordered });
 
-      // Swap positions
-      const above = items[idx - 1];
-      const current = items[idx];
-      const newItems = items.map((it) => {
-        if (it.id === current.id) return { ...it, position: above.position };
-        if (it.id === above.id) return { ...it, position: current.position };
-        return it;
-      });
-
-      setList({ ...list, items: newItems });
       try {
         await api.rankings.reorder(
           list.id,
-          newItems.map((it) => ({ id: it.id, position: it.position })),
+          reordered.map((it) => ({ id: it.id, position: it.position })),
         );
       } catch {
         fetchList();
@@ -126,35 +119,7 @@ export default function RankingDetail() {
     [list, fetchList],
   );
 
-  const handleMoveDown = useCallback(
-    async (itemId: string) => {
-      if (!list) return;
-      const items = [...list.items].sort((a, b) => a.position - b.position);
-      const idx = items.findIndex((i) => i.id === itemId);
-      if (idx < 0 || idx >= items.length - 1) return;
-
-      const below = items[idx + 1];
-      const current = items[idx];
-      const newItems = items.map((it) => {
-        if (it.id === current.id) return { ...it, position: below.position };
-        if (it.id === below.id) return { ...it, position: current.position };
-        return it;
-      });
-
-      setList({ ...list, items: newItems });
-      try {
-        await api.rankings.reorder(
-          list.id,
-          newItems.map((it) => ({ id: it.id, position: it.position })),
-        );
-      } catch {
-        fetchList();
-      }
-    },
-    [list, fetchList],
-  );
-
-  // ── Remove item ──
+  // ── Remove ──
 
   const handleRemoveItem = useCallback(
     (itemId: string) => {
@@ -202,6 +167,89 @@ export default function RankingDetail() {
     ]);
   }, [id, router, t]);
 
+  // ── Render item ──
+
+  const renderItem = useCallback(
+    ({ item, drag, isActive, getIndex }: RenderItemParams<RankedListItem>) => {
+      const index = getIndex() ?? 0;
+      return (
+        <ScaleDecorator>
+          <Pressable
+            onLongPress={drag}
+            disabled={isActive}
+            className="mx-4 mb-2 flex-row items-center gap-3 rounded-xl border p-3"
+            style={{
+              borderColor: isActive
+                ? "rgba(124,77,255,0.4)"
+                : "rgba(255,255,255,0.06)",
+              backgroundColor: isActive
+                ? "rgba(124,77,255,0.1)"
+                : "rgba(255,255,255,0.02)",
+            }}
+          >
+            {/* Drag handle */}
+            <Ionicons name="reorder-three" size={20} color={isActive ? "#7c4dff" : "#555"} />
+
+            {/* Position */}
+            <Text
+              className="text-center font-heading-bold"
+              style={{
+                width: 22,
+                color: index < 3 ? "#7c4dff" : "#8a8a9a",
+                fontSize: 16,
+              }}
+            >
+              {index + 1}
+            </Text>
+
+            {/* Poster */}
+            <View
+              className="overflow-hidden rounded-lg"
+              style={{
+                width: 36,
+                height: 54,
+                backgroundColor: "rgba(255,255,255,0.05)",
+              }}
+            >
+              {item.posterPath ? (
+                <Image
+                  source={{
+                    uri: `https://image.tmdb.org/t/p/w92${item.posterPath}`,
+                  }}
+                  style={{ width: "100%", height: "100%" }}
+                  contentFit="cover"
+                />
+              ) : (
+                <View className="flex-1 items-center justify-center">
+                  <Ionicons name="film-outline" size={14} color="#8a8a9a" />
+                </View>
+              )}
+            </View>
+
+            {/* Info */}
+            <View className="flex-1">
+              <Text
+                className="text-sm font-heading-semibold text-primary"
+                numberOfLines={1}
+              >
+                {item.title}
+              </Text>
+              <Text className="text-xs font-sans text-muted-foreground">
+                {item.year} · {item.director}
+              </Text>
+            </View>
+
+            {/* Delete */}
+            <Pressable onPress={() => handleRemoveItem(item.id)} hitSlop={8}>
+              <Ionicons name="close-circle-outline" size={20} color="#ff5252" />
+            </Pressable>
+          </Pressable>
+        </ScaleDecorator>
+      );
+    },
+    [handleRemoveItem],
+  );
+
   // ── Render ──
 
   if (loading) {
@@ -224,68 +272,6 @@ export default function RankingDetail() {
 
   const sortedItems = [...list.items].sort((a, b) => a.position - b.position);
 
-  const renderItem = ({ item, index }: { item: RankedListItem; index: number }) => (
-    <View className="mx-4 mb-2 flex-row items-center gap-3 rounded-xl border border-border bg-card p-3">
-      {/* Position */}
-      <Text
-        className="text-center font-heading-bold"
-        style={{ width: 24, color: index < 3 ? "#7c4dff" : "#8a8a9a", fontSize: 16 }}
-      >
-        {index + 1}
-      </Text>
-
-      {/* Poster */}
-      <View
-        className="overflow-hidden rounded-lg"
-        style={{ width: 40, height: 60, backgroundColor: "rgba(255,255,255,0.05)" }}
-      >
-        {item.posterPath ? (
-          <Image
-            source={{ uri: `https://image.tmdb.org/t/p/w92${item.posterPath}` }}
-            style={{ width: "100%", height: "100%" }}
-            contentFit="cover"
-          />
-        ) : (
-          <View className="flex-1 items-center justify-center">
-            <Ionicons name="film-outline" size={16} color="#8a8a9a" />
-          </View>
-        )}
-      </View>
-
-      {/* Info */}
-      <View className="flex-1">
-        <Text className="text-sm font-heading-semibold text-primary" numberOfLines={1}>
-          {item.title}
-        </Text>
-        <Text className="text-xs font-sans text-muted-foreground">
-          {item.year} · {item.director}
-        </Text>
-      </View>
-
-      {/* Reorder + delete */}
-      <View className="items-center gap-0.5">
-        <Pressable onPress={() => handleMoveUp(item.id)} hitSlop={8}>
-          <Ionicons
-            name="chevron-up"
-            size={18}
-            color={index > 0 ? "#8a8a9a" : "rgba(255,255,255,0.1)"}
-          />
-        </Pressable>
-        <Pressable onPress={() => handleMoveDown(item.id)} hitSlop={8}>
-          <Ionicons
-            name="chevron-down"
-            size={18}
-            color={index < sortedItems.length - 1 ? "#8a8a9a" : "rgba(255,255,255,0.1)"}
-          />
-        </Pressable>
-      </View>
-
-      <Pressable onPress={() => handleRemoveItem(item.id)} hitSlop={8}>
-        <Ionicons name="close-circle-outline" size={20} color="#ff5252" />
-      </Pressable>
-    </View>
-  );
-
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       {/* Header */}
@@ -294,11 +280,17 @@ export default function RankingDetail() {
           <Ionicons name="arrow-back" size={24} color="#e8e8ed" />
         </Pressable>
         <View className="flex-1">
-          <Text className="text-lg font-heading-bold text-primary" numberOfLines={1}>
+          <Text
+            className="text-lg font-heading-bold text-primary"
+            numberOfLines={1}
+          >
             {list.name}
           </Text>
           {list.description && (
-            <Text className="text-xs font-sans text-muted-foreground" numberOfLines={1}>
+            <Text
+              className="text-xs font-sans text-muted-foreground"
+              numberOfLines={1}
+            >
               {list.description}
             </Text>
           )}
@@ -308,7 +300,11 @@ export default function RankingDetail() {
           className="rounded-lg px-3 py-1.5"
           style={{ backgroundColor: "rgba(124,77,255,0.15)" }}
         >
-          <Ionicons name={addMode ? "close" : "add"} size={18} color="#7c4dff" />
+          <Ionicons
+            name={addMode ? "close" : "add"}
+            size={18}
+            color="#7c4dff"
+          />
         </Pressable>
         <Pressable onPress={handleDeleteList} hitSlop={8}>
           <Ionicons name="trash-outline" size={20} color="#ff5252" />
@@ -328,7 +324,9 @@ export default function RankingDetail() {
               className="ml-2 flex-1 py-3 text-sm font-sans text-primary"
               autoFocus
             />
-            {searching && <ActivityIndicator size="small" color="#7c4dff" />}
+            {searching && (
+              <ActivityIndicator size="small" color="#7c4dff" />
+            )}
           </View>
 
           {searchResults.length > 0 && (
@@ -336,6 +334,7 @@ export default function RankingDetail() {
               <FlatList
                 data={searchResults}
                 keyExtractor={(item) => String(item.id)}
+                keyboardShouldPersistTaps="handled"
                 renderItem={({ item }) => (
                   <Pressable
                     onPress={() => handleAddMovie(item)}
@@ -343,25 +342,38 @@ export default function RankingDetail() {
                   >
                     <View
                       className="overflow-hidden rounded"
-                      style={{ width: 28, height: 42, backgroundColor: "rgba(255,255,255,0.05)" }}
+                      style={{
+                        width: 28,
+                        height: 42,
+                        backgroundColor: "rgba(255,255,255,0.05)",
+                      }}
                     >
                       {item.posterPath && (
                         <Image
-                          source={{ uri: `https://image.tmdb.org/t/p/w92${item.posterPath}` }}
+                          source={{
+                            uri: `https://image.tmdb.org/t/p/w92${item.posterPath}`,
+                          }}
                           style={{ width: "100%", height: "100%" }}
                           contentFit="cover"
                         />
                       )}
                     </View>
                     <View className="flex-1">
-                      <Text className="text-sm font-sans-medium text-primary" numberOfLines={1}>
+                      <Text
+                        className="text-sm font-sans-medium text-primary"
+                        numberOfLines={1}
+                      >
                         {item.title}
                       </Text>
                       <Text className="text-xs font-sans text-muted-foreground">
                         {item.year} · {item.director}
                       </Text>
                     </View>
-                    <Ionicons name="add-circle-outline" size={22} color="#7c4dff" />
+                    <Ionicons
+                      name="add-circle-outline"
+                      size={22}
+                      color="#7c4dff"
+                    />
                   </Pressable>
                 )}
               />
@@ -370,11 +382,14 @@ export default function RankingDetail() {
         </View>
       )}
 
-      {/* Items */}
-      <FlatList
+      {/* Draggable items */}
+      <DraggableFlatList
         data={sortedItems}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        onDragEnd={handleDragEnd}
+        activationDistance={10}
+        containerStyle={{ flex: 1 }}
         contentContainerStyle={{ paddingTop: 8, paddingBottom: 40 }}
         ListEmptyComponent={
           <Text className="px-4 py-12 text-center text-sm font-sans text-muted-foreground">

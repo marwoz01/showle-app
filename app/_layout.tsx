@@ -1,6 +1,7 @@
 import "@/global.css";
 import { useEffect } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
 import { ClerkProvider, ClerkLoaded, useAuth } from "@clerk/clerk-expo";
@@ -86,12 +87,14 @@ export default function RootLayout() {
   }
 
   return (
-    <ClerkProvider publishableKey={clerkPublishableKey!} tokenCache={tokenCache}>
-      <ClerkLoaded>
-        <I18nProvider>
-          <AuthGuard />
-        </I18nProvider>
-      </ClerkLoaded>
-    </ClerkProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ClerkProvider publishableKey={clerkPublishableKey!} tokenCache={tokenCache}>
+        <ClerkLoaded>
+          <I18nProvider>
+            <AuthGuard />
+          </I18nProvider>
+        </ClerkLoaded>
+      </ClerkProvider>
+    </GestureHandlerRootView>
   );
 }
