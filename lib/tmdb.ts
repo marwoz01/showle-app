@@ -1,0 +1,110 @@
+import Constants from "expo-constants";
+import { MediaDetails } from "@/types";
+
+const API_KEY = Constants.expoConfig?.extra?.tmdbApiKey ?? "";
+const BASE_URL = "https://api.themoviedb.org/3";
+
+const cache = new Map<string, { data: unknown; expiry: number }>();
+const CACHE_TTL = 3600 * 1000; // 1 hour
+
+interface TmdbMovieListItem {
+  id: number;
+  title: string;
+  release_date: string;
+  poster_path: string | null;
+  overview: string;
+  popularity: number;
+  vote_average: number;
+  vote_count: number;
+  genre_ids: number[];
+}
+
+interface TmdbMovieDetails {
+  id: number;
+  title: string;
+  release_date: string;
+  poster_path: string | null;
+  overview: string;
+  tagline: string;
+  popularity: number;
+  vote_average: number;
+  runtime: number;
+  budget: number;
+  genres: { id: number; name: string }[];
+  production_countries: { iso_3166_1: string; name: string }[];
+}
+
+interface TmdbCredits {
+  cast: { name: string; order: number }[];
+  crew: { job: string; name: string }[];
+}
+
+async function tmdbFetch<T>(path: string, params: Record<string, string> = {}): Promise<T> {
+  const url = new URL(`${BASE_URL}${path}`);
+  url.searchParams.set("api_key", API_KEY);
+  for (const [key, value] of Object.entries(params)) {
+    url.searchParams.set(key, value);
+  }
+
+  const cacheKey = url.toString();
+  const cached = cache.get(cacheKey);
+  if (cached && cached.expiry > Date.now()) {
+    return cached.data as T;
+  }
+
+  const res = await fetch(url.toString());
+  if (!res.ok) throw new Error(`TMDB error: ${res.status}`);
+  const data = await res.json();
+
+  cache.set(cacheKey, { data, expiry: Date.now() + CACHE_TTL });
+  return data;
+}
+
+export async function searchMovies(query: string): Promise<MediaDetails[]> {
+  const data = await tmdbFetch<{ results: TmdbMovieListItem[] }>("/search/movie", {
+    query,
+    language: "en-US",
+    page: "1",
+  });
+
+  const filtered = data.results.filter(
+    (m) => m.vote_count >= 50 && m.release_date
+  );
+
+  const top = filtered.slice(0, 6);
+  const details = await Promise.all(top.map((m) => getMovieDetails(m.id)));
+  return details.filter((d): d is MediaDetails => d !== null);
+}
+
+export async function getMovieDetails(id: number): Promise<MediaDetails | null> {
+  try {
+    const [movie, credits] = await Promise.all([
+      tmdbFetch<TmdbMovieDetails>(`/movie/${id}`, { language: "en-US" }),
+      tmdbFetch<TmdbCredits>(`/movie/${id}/credits`),
+    ]);
+
+    const director = credits.crew.find((c) => c.job === "Director")?.name ?? "Unknown";
+    const leadActor = credits.cast?.[0]?.name ?? "Unknown";
+    const country = movie.production_countries[0]?.name ?? "Unknown";
+
+    return {
+      id: movie.id,
+      title: movie.title,
+      type: "movie",
+      year: movie.release_date ? parseInt(movie.release_date.slice(0, 4)) : 0,
+      genres: movie.genres.map((g) => g.name),
+      country,
+      director,
+      leadActor,
+      runtime: movie.runtime ?? 0,
+      budget: movie.budget ? Math.round(movie.budget / 1_000_000) : 0,
+      popularity: Math.round(movie.popularity),
+      rating: Math.round(movie.vote_average * 10) / 10,
+      posterPath: movie.poster_path ?? "",
+      overview: movie.overview,
+      tagline: movie.tagline || undefined,
+    };
+  } catch {
+    return null;
+  }
+}
