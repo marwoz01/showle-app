@@ -47,9 +47,11 @@ export interface Hint {
     | "trivia"
     | "director_initials"
     | "cast"
+    | "country"
     | "title_reveal";
   content: string;
   revealedAt: number;
+  paid?: boolean;
 }
 
 export type GameStatus = "playing" | "won" | "lost";

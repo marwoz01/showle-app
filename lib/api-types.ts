@@ -25,6 +25,9 @@ export interface SaveStateBody {
   targetTitle: string;
   targetYear: number;
   targetPoster: string;
+  extraAttempts?: number;
+  paidHintUsed?: boolean;
+  paidHintsCount?: number;
 }
 
 export type CompleteBody = SaveStateBody;
@@ -42,6 +45,39 @@ export interface UserStatsResponse {
   currentStreak: number;
   maxStreak: number;
   averageGuesses: number;
+  coinBalance: number;
+  streakFreezes: number;
+}
+
+// ── Wallet / Coins ──
+
+export interface WalletResponse {
+  balance: number;
+  streakFreezes: number;
+}
+
+export interface SpendCoinsBody {
+  action: "buy_hint" | "buy_attempt" | "buy_freeze";
+  dateKey?: string;
+}
+
+export interface SpendCoinsResponse {
+  balance: number;
+  streakFreezes: number;
+  success: boolean;
+}
+
+export interface StreakCheckResponse {
+  status: "ok" | "freeze_used" | "streak_broken";
+  previousStreak?: number;
+  remainingFreezes?: number;
+}
+
+export interface CompleteResponse extends GameStateResponse {
+  coinsEarned: number;
+  newBalance: number;
+  streakMilestone: number | null;
+  freezeUsed: boolean;
 }
 
 // ── Collection ──
@@ -111,4 +147,47 @@ export interface RankedList {
   _count?: { items: number };
   createdAt: string;
   updatedAt: string;
+}
+
+// ── Collection Stats ──
+
+export interface CollectionStatsResponse {
+  totalMovies: number;
+  totalHours: number;
+  totalMinutes: number;
+  favoriteGenre: string | null;
+}
+
+// ── Recommendations ──
+
+export interface RecommendRequest {
+  genres: string[];
+  yearFrom: number;
+  yearTo: number;
+  popularity: string;
+  locale: string;
+  exclude?: number[];
+  freeformText?: string;
+  excludeWatched?: boolean;
+}
+
+export interface RecommendationResult {
+  movie: {
+    id: number;
+    title: string;
+    year: number;
+    genres: string[];
+    runtime: number;
+    rating: number;
+    posterPath: string;
+    overview: string;
+    director: string;
+    country: string;
+    leadActor: string;
+    popularity: number;
+    budget: number;
+    type: string;
+    tagline?: string;
+  };
+  justification: string;
 }

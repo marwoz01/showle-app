@@ -14,6 +14,32 @@ export interface Translations {
     modeTitle: string;
     modeDesc: string;
     getRecommendations: string;
+    title: string;
+    subtitle: string;
+    genresLabel: string;
+    selectGenre: string;
+    freeformLabel: string;
+    freeformPlaceholder: string;
+    freeformHint: string;
+    excludeWatched: string;
+    requiresLogin: string;
+    yearLabel: string;
+    popularityLabel: string;
+    popularityPopular: string;
+    popularityPopularDesc: string;
+    popularityMedium: string;
+    popularityMediumDesc: string;
+    popularityNiche: string;
+    popularityNicheDesc: string;
+    submit: string;
+    loading: string;
+    noResults: string;
+    error: string;
+    tryAgain: string;
+    changePreferences: string;
+    topPick: string;
+    whyRecommend: string;
+    yearAny: string;
   };
   game: {
     back: string;
@@ -54,6 +80,8 @@ export interface Translations {
     genresAre: (genres: string) => string;
     tagline: (tagline: string) => string;
     overview: (text: string) => string;
+    leadActorIs: (name: string) => string;
+    countryIs: (country: string) => string;
   };
   auth: {
     signIn: string;
@@ -84,12 +112,16 @@ export interface Translations {
     currentStreak: string;
     maxStreak: string;
     averageGuesses: string;
+    moviesWatched: string;
+    hoursWatched: string;
+    favoriteGenre: string;
     gameHistory: string;
     noGamesYet: string;
     won: string;
     lost: string;
     attempts: string;
     loadError: string;
+    viewFullHistory: string;
   };
   result: {
     youGuessed: string;
@@ -99,6 +131,33 @@ export interface Translations {
     share: string;
     copied: string;
     shareText: (title: string, attempts: number, max: number) => string;
+  };
+  coins: {
+    balance: string;
+    earned: string;
+    streakBonus: string;
+    buyHint: string;
+    buyHintDesc: string;
+    buyAttempt: string;
+    buyAttemptDesc: string;
+    buyFreeze: string;
+    buyFreezeDesc: string;
+    notEnough: string;
+    outOfAttempts: string;
+    buyOrGiveUp: string;
+    attemptsRemaining: (n: number) => string;
+    freezeUsed: string;
+    streakBroken: string;
+    streakWas: (n: number) => string;
+    freezesOwned: (n: number, max: number) => string;
+    giveUp: string;
+    freezeProtected: string;
+    connectionError: string;
+    rewardTitle: string;
+    rewardLost: string;
+    tapToContinue: string;
+    shopTitle: string;
+    yourBalance: string;
   };
   collections: {
     title: string;

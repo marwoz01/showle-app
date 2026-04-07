@@ -7,6 +7,7 @@ import { useFonts } from "expo-font";
 import { ClerkProvider, ClerkLoaded, useAuth } from "@clerk/clerk-expo";
 import { tokenCache } from "@/lib/clerk-token-cache";
 import { I18nProvider } from "@/i18n";
+import { WalletProvider } from "@/hooks/useWallet";
 import { setTokenGetter } from "@/lib/api";
 import Constants from "expo-constants";
 import {
@@ -44,11 +45,12 @@ function AuthGuard() {
   useEffect(() => {
     if (!isLoaded) return;
 
-    const inAuthGroup = segments[0] === "(auth)";
+    const firstSegment = segments[0];
+    const inApp = firstSegment === "(tabs)" || firstSegment === "ranking" || firstSegment === "add-movie" || firstSegment === "history" || firstSegment === "shop";
 
-    if (!isSignedIn && !inAuthGroup) {
-      router.replace("/(auth)/sign-in");
-    } else if (isSignedIn && inAuthGroup) {
+    if (!isSignedIn && inApp) {
+      router.replace("/");
+    } else if (isSignedIn && !inApp) {
       router.replace("/(tabs)");
     }
   }, [isSignedIn, isLoaded, segments]);
@@ -78,7 +80,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync().catch(() => {});
     }
   }, [fontsLoaded]);
 
@@ -91,7 +93,9 @@ export default function RootLayout() {
       <ClerkProvider publishableKey={clerkPublishableKey!} tokenCache={tokenCache}>
         <ClerkLoaded>
           <I18nProvider>
-            <AuthGuard />
+            <WalletProvider>
+              <AuthGuard />
+            </WalletProvider>
           </I18nProvider>
         </ClerkLoaded>
       </ClerkProvider>

@@ -1,17 +1,19 @@
 import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Hint } from "@/types";
-import { MAX_ATTEMPTS } from "@/constants";
 import { useTranslation } from "@/i18n";
 
 interface HintsPanelProps {
   revealedHints: Hint[];
-  totalHints: number;
+  allHints: Hint[];
 }
 
-export default function HintsPanel({ revealedHints, totalHints }: HintsPanelProps) {
+export default function HintsPanel({ revealedHints, allHints }: HintsPanelProps) {
   const { t } = useTranslation();
-  const lockedCount = Math.max(0, totalHints - revealedHints.length);
+
+  const lockedCount = allHints.length - revealedHints.length;
+
+  if (allHints.length === 0) return null;
 
   return (
     <View className="rounded-2xl border border-border bg-card p-5">
@@ -20,6 +22,7 @@ export default function HintsPanel({ revealedHints, totalHints }: HintsPanelProp
       </Text>
 
       <View className="gap-2.5">
+        {/* Revealed hints */}
         {revealedHints.map((hint) => (
           <View
             key={hint.id}
@@ -33,19 +36,17 @@ export default function HintsPanel({ revealedHints, totalHints }: HintsPanelProp
           </View>
         ))}
 
-        {Array.from(
-          { length: Math.min(lockedCount, MAX_ATTEMPTS - revealedHints.length) },
-          (_, i) => (
-            <View
-              key={`locked-${i}`}
-              className="flex-row items-center gap-3 rounded-lg px-3 py-2.5"
-              style={{ backgroundColor: "rgba(255,255,255,0.02)" }}
-            >
-              <Ionicons name="lock-closed-outline" size={16} color="rgba(138,138,154,0.4)" />
-              <Text style={{ color: "rgba(138,138,154,0.4)", fontSize: 14 }}>???</Text>
-            </View>
-          )
-        )}
+        {/* Locked hints */}
+        {Array.from({ length: lockedCount }, (_, i) => (
+          <View
+            key={`locked-${i}`}
+            className="flex-row items-center gap-3 rounded-lg px-3 py-2.5"
+            style={{ backgroundColor: "rgba(255,255,255,0.02)" }}
+          >
+            <Ionicons name="lock-closed-outline" size={16} color="rgba(138,138,154,0.4)" />
+            <Text style={{ color: "rgba(138,138,154,0.4)", fontSize: 14 }}>???</Text>
+          </View>
+        ))}
       </View>
     </View>
   );

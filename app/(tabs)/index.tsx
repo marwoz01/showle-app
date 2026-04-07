@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "@/i18n";
 import GameModeCard from "@/components/home/GameModeCard";
+import CoinBadge from "@/components/shared/CoinBadge";
 
 export default function Home() {
   const { t } = useTranslation();
@@ -15,13 +16,16 @@ export default function Home() {
       contentContainerStyle={{ paddingTop: insets.top + 20, paddingHorizontal: 20, paddingBottom: 100 }}
     >
       {/* Header */}
-      <View className="mb-8">
-        <Text className="mb-2 text-4xl font-heading-bold text-primary">
-          {t.home.title}
-        </Text>
-        <Text className="text-base font-sans-medium text-muted-foreground">
-          {t.home.subtitle}
-        </Text>
+      <View className="mb-8 flex-row items-start justify-between">
+        <View className="flex-1">
+          <Text className="mb-2 text-4xl font-heading-bold text-primary">
+            {t.home.title}
+          </Text>
+          <Text className="text-base font-sans-medium text-muted-foreground">
+            {t.home.subtitle}
+          </Text>
+        </View>
+        <CoinBadge />
       </View>
 
       {/* Game mode cards */}

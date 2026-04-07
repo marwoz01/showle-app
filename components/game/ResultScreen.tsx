@@ -5,7 +5,6 @@ import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import { MediaDetails, GuessResult, GameStatus } from "@/types";
-import { MAX_ATTEMPTS } from "@/constants";
 import { useTranslation } from "@/i18n";
 
 interface ResultScreenProps {
@@ -13,9 +12,13 @@ interface ResultScreenProps {
   status: GameStatus;
   guesses: GuessResult[];
   hintsUsed: number;
+  maxAttempts: number;
+  coinsEarned?: number;
+  streakMilestone?: number | null;
+  freezeUsed?: boolean;
 }
 
-export default function ResultScreen({ answer, status, guesses, hintsUsed }: ResultScreenProps) {
+export default function ResultScreen({ answer, status, guesses, hintsUsed, maxAttempts, coinsEarned, streakMilestone, freezeUsed }: ResultScreenProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
@@ -29,7 +32,7 @@ export default function ResultScreen({ answer, status, guesses, hintsUsed }: Res
   const accuracy = totalFields > 0 ? Math.round((exactCount / totalFields) * 100) : 0;
 
   async function handleShare() {
-    const text = t.result.shareText(answer.title, attempts, MAX_ATTEMPTS);
+    const text = t.result.shareText(answer.title, attempts, maxAttempts);
     try {
       await Clipboard.setStringAsync(text);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -41,7 +44,7 @@ export default function ResultScreen({ answer, status, guesses, hintsUsed }: Res
   }
 
   const stats = [
-    { icon: "locate-outline" as const, label: t.result.attempts, value: `${attempts}/${MAX_ATTEMPTS}` },
+    { icon: "locate-outline" as const, label: t.result.attempts, value: `${attempts}/${maxAttempts}` },
     { icon: "bulb-outline" as const, label: t.result.hintsUsed, value: `${hintsUsed}` },
     { icon: "bar-chart-outline" as const, label: t.result.accuracy, value: `${accuracy}%` },
   ];
@@ -142,6 +145,37 @@ export default function ResultScreen({ answer, status, guesses, hintsUsed }: Res
           </View>
         ))}
       </View>
+
+      {/* Coins earned */}
+      {won && coinsEarned !== undefined && coinsEarned > 0 && (
+        <View className="px-6 py-4 border-t border-border">
+          <View className="flex-row items-center justify-center gap-2">
+            <Ionicons name="diamond" size={18} color="#ffc107" />
+            <Text className="text-lg font-heading-bold text-warning">+{coinsEarned}</Text>
+            <Text className="text-sm font-sans-medium text-muted-foreground">{t.coins.earned}</Text>
+          </View>
+          {streakMilestone && streakMilestone > 0 && (
+            <View className="mt-2 flex-row items-center justify-center gap-1.5 rounded-lg bg-accent/10 py-2 px-3">
+              <Ionicons name="flame" size={14} color="#7c4dff" />
+              <Text className="text-sm font-sans-bold text-accent">
+                {t.coins.streakBonus} +{streakMilestone}
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Freeze used on loss */}
+      {!won && freezeUsed && (
+        <View className="px-6 py-4 border-t border-border">
+          <View className="flex-row items-center justify-center gap-2 rounded-lg py-2 px-3" style={{ backgroundColor: "rgba(0,188,212,0.1)" }}>
+            <Ionicons name="snow" size={16} color="#00bcd4" />
+            <Text className="text-sm font-sans-bold" style={{ color: "#00bcd4" }}>
+              {t.coins.freezeProtected}
+            </Text>
+          </View>
+        </View>
+      )}
 
       {/* Share button */}
       <View className="px-6 pb-6">

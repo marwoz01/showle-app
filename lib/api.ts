@@ -3,6 +3,7 @@ import {
   GameStateResponse,
   SaveStateBody,
   CompleteBody,
+  CompleteResponse,
   HistoryResponse,
   UserStatsResponse,
   SavedMovie,
@@ -12,6 +13,13 @@ import {
   CollectionCategory,
   RankedList,
   RankedListItem,
+  RecommendRequest,
+  RecommendationResult,
+  WalletResponse,
+  SpendCoinsBody,
+  SpendCoinsResponse,
+  StreakCheckResponse,
+  CollectionStatsResponse,
 } from "./api-types";
 
 const BASE_URL =
@@ -23,7 +31,7 @@ export function setTokenGetter(fn: () => Promise<string | null>) {
   _getToken = fn;
 }
 
-class ApiError extends Error {
+export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
@@ -70,7 +78,7 @@ export const api = {
       }),
 
     complete: (body: CompleteBody) =>
-      authFetch<GameStateResponse>("/api/game/complete", {
+      authFetch<CompleteResponse>("/api/game/complete", {
         method: "POST",
         body: JSON.stringify(body),
       }),
@@ -79,10 +87,21 @@ export const api = {
       authFetch<HistoryResponse>(
         `/api/game/history?page=${page}&perPage=${perPage}&status=${status}`,
       ),
+
+    streakCheck: () =>
+      authFetch<StreakCheckResponse>("/api/game/streak-check"),
   },
 
   user: {
     stats: () => authFetch<UserStatsResponse>("/api/user/stats"),
+
+    wallet: () => authFetch<WalletResponse>("/api/user/wallet"),
+
+    spendCoins: (body: SpendCoinsBody) =>
+      authFetch<SpendCoinsResponse>("/api/coins/spend", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
   },
 
   collection: {
@@ -105,6 +124,8 @@ export const api = {
 
     remove: (id: string) =>
       authFetch<void>(`/api/collection/${id}`, { method: "DELETE" }),
+
+    stats: () => authFetch<CollectionStatsResponse>("/api/collection/stats"),
   },
 
   rankings: {
@@ -145,4 +166,10 @@ export const api = {
         method: "DELETE",
       }),
   },
+
+  recommend: (body: RecommendRequest) =>
+    authFetch<RecommendationResult[]>("/api/recommend", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 };
